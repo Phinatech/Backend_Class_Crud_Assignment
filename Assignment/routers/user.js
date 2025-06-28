@@ -1,27 +1,36 @@
-const router = require('express')
-const {createUser,readUser,updateUser,deleteUser,getOneUser, loginUser} = require('../controllers/userController');
+import express from 'express';
+import {
+  readUser,
+  updateUser,
+  deleteUser,
+  getOneUser,
+  loginUser,
+    createUser,
+  logoutUser,
+} from '../controllers/User/barrel.js';
 
-const Router = router()
+import authMiddleware from '../middleware/authmiddles.js';
 
-    //Create a new User 
-    Router.post('/users/register', createUser)
-    //Login a user
-    Router.post('/users/login', loginUser)
+const Router = express.Router();
 
-    //Get all users
-    Router.get('/users', readUser)
-    //Get one user by ID
-    Router.get('/users/:id/', getOneUser)
+// Create a new user
+Router.post('/users/create', createUser); 
 
-    //update a user
-    Router.patch('/users/update/:id', updateUser)
-    
-    //delete a user
-    Router.delete('/user/:id', deleteUser)
+// Login a user
+Router.post('/users/login', loginUser);
 
+// Get all users
+Router.get('/users', readUser);
 
+// Get one user by ID
+Router.get('/users/:id', getOneUser);
 
+// Update a user
+Router.patch('/users/update/:id', updateUser);
 
+// Delete a user
+Router.delete('/users/:id',  deleteUser); 
+// Logout a user
+Router.post('/users/logout', authMiddleware, logoutUser);
 
-module.exports = Router;
-
+export default Router;
