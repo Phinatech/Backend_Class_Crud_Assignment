@@ -1,41 +1,39 @@
-import  User from "../../models/userSchema.js"
-import  bcrypt  from "bcrypt"
-import jwt from "jsonwebtoken"
-
+import User from "../../models/userSchema.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 export const loginUser = async (req, res) => {
-    const {gmail, password} = req.body
-   if (!gmail || !password) {
-        res.status(400).json({ message: "Please provide all fields" })
-        return
-    } else {
-    try {
-        const user = await User.findOne({ gmail })
-        if (!user) {
-            res.status(400).json({ message: "User not found please register first to continue" })
-            return
-        }
+  const { gmail, password } = req.body;
 
-        const compared = await bcrypt.compare(password, user.password)
-        if (!compared) {
-            res.status(401).json({ message: "gmail or password is incorrect" })
-            return
-        }
-         
-        
-        const getToken = (id) => { 
-            return jwt.sign({id}, process.env.JWT_SECRET, {expiresIn: "5m"})
-        }
-        
+  if (!gmail || !password) {
+    return res.status(400).json({ message: "Please provide gmail and password" });
+  }
 
-        const token = getToken(user._id)
-        return res 
-            .cookie('token', token, { httpOnly: true, sameSite: 'strict' })
-            .status(200)
-            .json({ message: "Login Successful proceed to make a post"})
-        
-    } catch (error) {
-        res.status(500).json(error)
-       }
+  try {
+    // Normalize email
+    const user = await User.findOne({ gmail: gmail.toLowerCase() });
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found. Please register first." });
     }
-}
+
+    const compared = await bcrypt.compare(password, user.password);
+    if (!compared) {
+      return res.status(401).json({ message: "Email or password is incorrect" });
+    }
+
+    // Generate token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || "fallbacksecret", {
+      expiresIn: "5m"
+    });
+
+    return res
+      .cookie("token", token, { httpOnly: true, sameSite: "strict" })
+      .status(200)
+      .json({ message: "Login successful", user, token });
+
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
